@@ -4,6 +4,7 @@
 
 source /koolshare/scripts/ss_base.sh
 CONFIG=$1
+INDEX=$2
 
 ISP_DNS1=$(nvram get wan0_dns|sed 's/ /\n/g'|grep -v 0.0.0.0|grep -v 127.0.0.1|sed -n 1p|grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}|:")
 ISP_DNS2=$(nvram get wan0_dns|sed 's/ /\n/g'|grep -v 0.0.0.0|grep -v 127.0.0.1|sed -n 2p|grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}|:")
@@ -70,16 +71,16 @@ perpare(){
 		DNSC_PORT="5335"
 	fi
 	
-	[ -n "$(cat /etc/dnsmasq.conf|grep no-resolv)" ] && sed -i '/no-resolv/d' /etc/dnsmasq.conf
-	[ -n "$(cat /etc/dnsmasq.conf|grep servers-file)" ] && sed -i '/servers-file/d' /etc/dnsmasq.conf
-	[ -n "$(cat /etc/dnsmasq.conf|grep resolv-file)" ] && sed -i '/resolv-file/d' /etc/dnsmasq.conf
+	[ -n "$(cat ${CONFIG}|grep no-resolv)" ] && sed -i '/no-resolv/d' ${CONFIG}
+	[ -n "$(cat ${CONFIG}|grep servers-file)" ] && sed -i '/servers-file/d' ${CONFIG}
+	[ -n "$(cat ${CONFIG}|grep resolv-file)" ] && sed -i '/resolv-file/d' ${CONFIG}
 }
 	
 use_chn_plan(){
 	# DNS方案，国内优先，因此dnsmasq的server默认为国内地址，国外解析由gfwlist.conf提供，路由的开销比较小，国内cdn很好，但是国外cdn较弱
 	pc_replace "cache-size=1500" "cache-size=9999" ${CONFIG}
-	pc_insert "no-poll" "server=${CDN}#${DNSC_PORT}" "/etc/dnsmasq.conf"
-	pc_insert "no-poll" "no-resolv" "/etc/dnsmasq.conf"
+	pc_insert "no-poll" "server=${CDN}#${DNSC_PORT}" ${CONFIG}
+	pc_insert "no-poll" "no-resolv" ${CONFIG}
 }
 
 use_frn_plan(){
@@ -93,14 +94,18 @@ use_frn_plan(){
 		[ -z "${ss_direct_user}" ] && ss_direct_user="8.8.8.8#53"
 
 		pc_replace "cache-size=1500" "cache-size=9999" ${CONFIG}
-		pc_insert "no-poll" "server=${ss_direct_user}" "/etc/dnsmasq.conf"
-		pc_insert "no-poll" "no-resolv" "/etc/dnsmasq.conf"
+		pc_insert "no-poll" "server=${ss_direct_user}" ${CONFIG}
+		pc_insert "no-poll" "no-resolv" ${CONFIG}
 	else
 		pc_replace "cache-size=1500" "cache-size=9999" ${CONFIG}
-		pc_insert "no-poll" "server=127.0.0.1#7913" "/etc/dnsmasq.conf"
-		pc_insert "no-poll" "no-resolv" "/etc/dnsmasq.conf"
+		pc_insert "no-poll" "server=127.0.0.1#7913" ${CONFIG}
+		pc_insert "no-poll" "no-resolv" ${CONFIG}
 	fi
 }
+
+if [ -n "${INDEX}" ];then
+	echo "conf-dir=/jffs/configs/dnsmasq.d" >>${CONFIG}
+fi
 
 if [ "${ss_basic_advdns}" != "1" ]; then
 	if [ "${ss_basic_mode}" == "1" -a -z "${chn_on}" -a -z "${all_on}" ] || [ "$ss_basic_mode" == "6" ];then

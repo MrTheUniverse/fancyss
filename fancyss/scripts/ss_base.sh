@@ -141,11 +141,13 @@ fi
 ss_basic_server_orig=${ss_basic_server}
 
 if [ ! -x "/koolshare/bin/v2ray" ];then
+	# 没有v2ray二进制，v2ray节点由xray来运行
 	ss_basic_vcore=1
 fi
 
-if [ ! -x "/koolshare/bin/v2ray" -a ! -x "/tmp/shadowsocks/bin/sslocal" ];then
-	ss_basic_rust=0
+if [ ! -x "/koolshare/bin/sslocal" ];then
+	# 没有sslocal二进制，ss节点由xray来运行
+	ss_basic_score=1
 fi
 
 # trojan 全局允许不安全
@@ -239,6 +241,19 @@ __valid_ip_silent() {
 	fi
 }
 
+__valid_ip46() {
+	# 验证是否为ipv4或者ipv6地址，是则正确返回，不是返回空值
+	local format_4=$(echo "$1" | grep -Eo "([0-9]{1,3}[\.]){3}[0-9]{1,3}$")
+	local format_6=$(echo "$1" | grep -Eo '^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*')
+	if [ -n "${format_4}" -a -z "${format_6}" ]; then
+		return 0
+	elif [ -z "${format_4}" -a -n "${format_6}" ]; then
+		return 1
+	else
+		return 2
+	fi
+}
+
 __valid_port() {
 	local port=$1
 	if [ $(number_test ${port}) != "0" ];then
@@ -311,5 +326,35 @@ detect_running_status2(){
 	done
 	if [ -z "${SLIENT}" ];then
 		echo_date "$1启动成功，pid：${DPID}"
+	fi
+}
+
+get_rand_port(){
+	# gen 10 random port
+	local ports=$(shuf -i 2000-65000 -n 10)
+	# get all used port
+	local LISTENS=$(netstat -nlp  2>/dev/null | grep -w "LISTEN" | awk '{print $4}'|awk -F ":" '{print $NF}'|sort -un)
+	# get one avaliable port
+	echo ${ports} ${LISTENS} ${LISTENS} | sed 's/\s/\n/g' | sort -n | uniq -u | head -n1
+}
+
+kill_used_port(){
+	# ports will be used in fancyss
+	local ports="3333 23456 7913 1051 1052 1055 1056 2051 2052 2055 2056 1091 1092 1093"
+	# get all used port in system
+	local LISTENS=$(netstat -nlp 2>/dev/null | grep -E "^tcp|^udp|^raw" | awk '{print $4}'|awk -F ":" '{print $NF}'|sort -un)
+	# get target ports that have been used
+	local used_ports=$(echo ${ports} ${LISTENS} | sed 's/\s/\n/g' | sort -n | uniq -d | tr '\n' ' ' | sed 's/\s$//g')
+	# kill ports taken program
+	if [ -n "${used_ports}" ];then
+		echo_date "检测到冲突端口：${used_ports}，尝试关闭占用端口的程序..."
+		for used_port in ${used_ports}
+		do
+			local _ret=$(netstat -nlp 2>/dev/null | grep -E "^tcp|^udp|^raw" | grep -w "${used_port}" | awk '{print $NF}')
+			local _conflic_prg=$(echo "${_ret}" | awk -F "/" '{print $2}' | sort -u | tr '\n' ' ' | sed 's/\s$//g' )
+			local _conflic_pid=$(echo "${_ret}" | awk -F "/" '{print $1}' | sort -u | tr '\n' ' ' | sed 's/\s$//g' )
+			echo_date "关闭冲突端口 ${used_port} 占用程序：${_conflic_prg}，pid：${_conflic_pid}"
+			kill -9 "${_conflic_pid}" >/dev/null 2>&1
+		done
 	fi
 }
