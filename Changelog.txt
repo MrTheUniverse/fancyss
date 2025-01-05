@@ -1,7 +1,6 @@
 fancyss Changelog
 ===========================================
-   
-3.3.6 (20240107)
+3.3.6 (to be released)
    - fix	修复通过vless://链接添加节点时候，在grpc模式下，serviceName可能漏掉添加的问题
    - fix	修复xray在底层传输安全为reality时候，有时因错误提交了flow参数导致节点不可用的问题
    - fix	修复当服务器出口是ipv6地址时，代理出口ip检测失败的问题
