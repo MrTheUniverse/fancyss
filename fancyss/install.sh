@@ -822,7 +822,13 @@ install_now(){
 	[ -z "$(dbus get ss_basic_interval)" ] && dbus set ss_basic_interval=2
 	[ -z "$(dbus get ss_basic_wt_furl)" ] && dbus set ss_basic_wt_furl="http://www.google.com.tw"
 	[ -z "$(dbus get ss_basic_wt_curl)" ] && dbus set ss_basic_wt_curl="http://www.baidu.com"
-	[ -z "${ss_basic_latency_opt}" ] && dbus set ss_basic_latency_opt="2"
+
+	# fancyss_arm 默认关闭延迟测试
+	if [ "${PKG_ARCH}" == "arm" ];then
+		[ -z "${ss_basic_latency_opt}" ] && dbus set ss_basic_latency_opt="0"
+	else
+		[ -z "${ss_basic_latency_opt}" ] && dbus set ss_basic_latency_opt="2"
+	fi
 
 	# 因版本变化导致一些值没有了，更改一下
 	if [ "${ss_basic_chng_china_2_tcp}" == "5" ];then
