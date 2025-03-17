@@ -18,7 +18,7 @@ import base64
 #mydnsport = '1053'
 
 if len(sys.argv) != 2:
-    print("fwlist.py outfile.txt")
+    print("update_gfwlist.py outfile.txt")
     sys.exit(-1)
 
 outfile = sys.argv[1]
