@@ -3,6 +3,7 @@ CurrentDate=$(TZ=CST-8 date +%Y-%m-%d\ %H:%M)
 CURR_PATH="$( cd "$( dirname "$BASH_SOURCE[0]" )" && pwd )"
 RULE_FILE=${CURR_PATH}/rules.json.js
 OBJECT_1='{}'
+FLAG1=""
 
 prepare(){
 	echo CURR_PATH: ${CURR_PATH}
@@ -43,7 +44,7 @@ get_gfwlist(){
 	# 5. compare
 	local md5sum1=$(md5sum ${CURR_PATH}/gfwlist_merge.txt | awk '{print $1}')
 	local md5sum2=$(md5sum ${CURR_PATH}/gfwlist.txt | awk '{print $1}')
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 	if [ "$md5sum1"x = "$md5sum2"x ]; then
 		echo "gfwlist txt same md5!"
 		return
@@ -72,7 +73,7 @@ get_gfwlist(){
 	# 5. compare
 	local md5sum1=$(md5sum ${CURR_PATH}/gfwlist_tmp.conf | awk '{print $1}')
 	local md5sum2=$(md5sum ${CURR_PATH}/gfwlist.conf | awk '{print $1}')
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 	if [ "$md5sum1"x = "$md5sum2"x ]; then
 		echo "gfwlist conf same md5!"
 		return
@@ -109,7 +110,7 @@ get_chnroute_misakaio(){
 	# 3. compare
 	local md5sum1=$(md5sum ${CURR_PATH}/chnroute_misakaio_tmp.txt | awk '{print $1}')
 	local md5sum2=$(md5sum ${CURR_PATH}/chnroute_misakaio.txt 2>/dev/null | awk '{print $1}')
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 	if [ "$md5sum1"x = "$md5sum2"x ]; then
 		local _IP_COUNT=$(awk -F "/" '{if ($2 == "") $2 = 32;sum += 2^(32-$2)};END {print sum}' ${CURR_PATH}/chnroute_misakaio.txt)
 		echo "chnroute_misakaio same md5! total $_IP_COUNT ips!"
@@ -123,6 +124,13 @@ get_chnroute_misakaio(){
 	local MD5_VALUE=${md5sum1}
 	local LINE_COUN=$(cat ${CURR_PATH}/chnroute_misakaio_tmp.txt | wc -l)
 	local IP_COUNT=$(awk -F "/" '{if ($2 == "") $2 = 32;sum += 2^(32-$2)};END {print sum}' ${CURR_PATH}/chnroute_misakaio_tmp.txt)
+
+	if [ "${LINE_COUN}" = "0" ];then
+		FLAG1=1
+		echo "udpate failed: chnroute from ${SOURCE} !"
+		return
+	fi
+	
 	jq --arg variable "${SOURCE}" '.chnroute_misakaio.source = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${URL}" '.chnroute_misakaio.url = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${CURR_DATE}" '.chnroute_misakaio.date = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
@@ -152,7 +160,7 @@ get_chnroute_cnisp(){
 	# 3. compare
 	local md5sum1=$(md5sum ${CURR_PATH}/chnroute_cnisp_tmp.txt | awk '{print $1}')
 	local md5sum2=$(md5sum ${CURR_PATH}/chnroute_cnisp.txt 2>/dev/null | awk '{print $1}')
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 	if [ "$md5sum1"x = "$md5sum2"x ]; then
 		local _IP_COUNT=$(awk -F "/" '{if ($2 == "") $2 = 32;sum += 2^(32-$2)};END {print sum}' ${CURR_PATH}/chnroute_cnisp.txt)
 		echo "chnroute_cnisp same md5! total $_IP_COUNT ips!"
@@ -166,6 +174,12 @@ get_chnroute_cnisp(){
 	local MD5_VALUE=${md5sum1}
 	local LINE_COUN=$(cat ${CURR_PATH}/chnroute_cnisp_tmp.txt | wc -l)
 	local IP_COUNT=$(awk -F "/" '{if ($2 == "") $2 = 32;sum += 2^(32-$2)};END {print sum}' ${CURR_PATH}/chnroute_cnisp_tmp.txt)
+	
+	if [ "${LINE_COUN}" = "0" ];then
+		FLAG1=1
+		echo "udpate failed: chnroute from ${SOURCE} !"
+		return
+	fi
 	jq --arg variable "${SOURCE}" '.chnroute_cnisp.source = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${URL}" '.chnroute_cnisp.url = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${CURR_DATE}" '.chnroute_cnisp.date = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
@@ -194,7 +208,7 @@ get_chnroute_apnic(){
 	# 3. compare
 	local md5sum1=$(md5sum ${CURR_PATH}/chnroute_apnic_tmp.txt | awk '{print $1}')
 	local md5sum2=$(md5sum ${CURR_PATH}/chnroute_apnic.txt 2>/dev/null | awk '{print $1}')
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 	if [ "$md5sum1"x = "$md5sum2"x ]; then
 		local _IP_COUNT=$(awk -F "/" '{if ($2 == "") $2 = 32;sum += 2^(32-$2)};END {print sum}' ${CURR_PATH}/chnroute_apnic.txt)
 		echo "chnroute_apnic same md5! total $_IP_COUNT ips!"
@@ -208,6 +222,13 @@ get_chnroute_apnic(){
 	local MD5_VALUE=${md5sum1}
 	local LINE_COUN=$(cat ${CURR_PATH}/chnroute_apnic_tmp.txt | wc -l)
 	local IP_COUNT=$(awk -F "/" '{if ($2 == "") $2 = 32;sum += 2^(32-$2)};END {print sum}' ${CURR_PATH}/chnroute_apnic_tmp.txt)
+
+	if [ "${LINE_COUN}" = "0" ];then
+		FLAG1=1
+		echo "udpate failed: chnroute from ${SOURCE} !"
+		return
+	fi
+	
 	jq --arg variable "${SOURCE}" '.chnroute_apnic.source = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${URL}" '.chnroute_apnic.url = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${CURR_DATE}" '.chnroute_apnic.date = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
@@ -238,7 +259,7 @@ get_chnroute_17mon(){
 	# 3. compare
 	local md5sum1=$(md5sum ${CURR_PATH}/chnroute_17mon_tmp.txt | awk '{print $1}')
 	local md5sum2=$(md5sum ${CURR_PATH}/chnroute_17mon.txt 2>/dev/null | awk '{print $1}')
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 	if [ "$md5sum1"x = "$md5sum2"x ]; then
 		local _IP_COUNT=$(awk -F "/" '{if ($2 == "") $2 = 32;sum += 2^(32-$2)};END {print sum}' ${CURR_PATH}/chnroute_17mon.txt)
 		echo "chnroute_17mon same md5! total $_IP_COUNT ips!"
@@ -252,6 +273,13 @@ get_chnroute_17mon(){
 	local MD5_VALUE=${md5sum1}
 	local LINE_COUN=$(cat ${CURR_PATH}/chnroute_17mon_tmp.txt | wc -l)
 	local IP_COUNT=$(awk -F "/" '{if ($2 == "") $2 = 32;sum += 2^(32-$2)};END {print sum}' ${CURR_PATH}/chnroute_17mon_tmp.txt)
+	
+	if [ "${LINE_COUN}" = "0" ];then
+		FLAG1=1
+		echo "udpate failed: chnroute from ${SOURCE} !"
+		return
+	fi
+	
 	jq --arg variable "${SOURCE}" '.chnroute_17mon.source = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${URL}" '.chnroute_17mon.url = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${CURR_DATE}" '.chnroute_17mon.date = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
@@ -281,7 +309,7 @@ get_chnroute_ipip(){
 	# 3. compare
 	local md5sum1=$(md5sum ${CURR_PATH}/chnroute_ipip_tmp.txt | awk '{print $1}')
 	local md5sum2=$(md5sum ${CURR_PATH}/chnroute_ipip.txt 2>/dev/null | awk '{print $1}')
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 	if [ "$md5sum1"x = "$md5sum2"x ]; then
 		local _IP_COUNT=$(awk -F "/" '{if ($2 == "") $2 = 32;sum += 2^(32-$2)};END {print sum}' ${CURR_PATH}/chnroute_ipip.txt)
 		echo "chnroute_ipip same md5! total $_IP_COUNT ips!"
@@ -295,13 +323,19 @@ get_chnroute_ipip(){
 	local MD5_VALUE=${md5sum1}
 	local LINE_COUN=$(cat ${CURR_PATH}/chnroute_ipip_tmp.txt | wc -l)
 	local IP_COUNT=$(awk -F "/" '{if ($2 == "") $2 = 32;sum += 2^(32-$2)};END {print sum}' ${CURR_PATH}/chnroute_ipip_tmp.txt)
+
+	if [ "${LINE_COUN}" = "0" ];then
+		FLAG1=1
+		echo "udpate failed: chnroute from ${SOURCE} !"
+		return
+	fi
+	
 	jq --arg variable "${SOURCE}" '.chnroute_ipip.source = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${URL}" '.chnroute_ipip.url = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${CURR_DATE}" '.chnroute_ipip.date = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${MD5_VALUE}" '.chnroute_ipip.md5 = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${LINE_COUN}" '.chnroute_ipip.count = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${IP_COUNT}" '.chnroute_ipip.count_ip = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
-
 	# 5. update file
 	echo "update chnroute from ${SOURCE}, total ${LINE_COUN} subnets, ${IP_COUNT} unique IPs !"
 	mv -f ${CURR_PATH}/chnroute_ipip_tmp.txt ${CURR_PATH}/chnroute_ipip.txt
@@ -324,7 +358,7 @@ get_chnroute_maxmind(){
 	# 3. compare
 	local md5sum1=$(md5sum ${CURR_PATH}/chnroute_maxmind_tmp.txt | awk '{print $1}')
 	local md5sum2=$(md5sum ${CURR_PATH}/chnroute_maxmind.txt 2>/dev/null | awk '{print $1}')
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 	if [ "$md5sum1"x = "$md5sum2"x ]; then
 		local _IP_COUNT=$(awk -F "/" '{if ($2 == "") $2 = 32;sum += 2^(32-$2)};END {print sum}' ${CURR_PATH}/chnroute_maxmind.txt)
 		echo "chnroute_maxmind same md5! total $_IP_COUNT ips!"
@@ -338,6 +372,13 @@ get_chnroute_maxmind(){
 	local MD5_VALUE=${md5sum1}
 	local LINE_COUN=$(cat ${CURR_PATH}/chnroute_maxmind_tmp.txt | wc -l)
 	local IP_COUNT=$(awk -F "/" '{if ($2 == "") $2 = 32;sum += 2^(32-$2)};END {print sum}' ${CURR_PATH}/chnroute_maxmind_tmp.txt)
+	
+	if [ "${LINE_COUN}" = "0" ];then
+		FLAG1=1
+		echo "udpate failed: chnroute from ${SOURCE} !"
+		return
+	fi
+	
 	jq --arg variable "${SOURCE}" '.chnroute_maxmind.source = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${URL}" '.chnroute_maxmind.url = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
 	jq --arg variable "${CURR_DATE}" '.chnroute_maxmind.date = $variable' ${RULE_FILE} | sponge ${RULE_FILE}
@@ -351,13 +392,18 @@ get_chnroute_maxmind(){
 }
 
 gen_chnroute_fancyss(){
+	if [ -n "${FLAG1}" ];then
+		echo "udpate failed: chnroute for fancyss !"
+		return
+	fi
+	
 	# 1. merge rules
 	cat ${CURR_PATH}/chnroute_misakaio.txt ${CURR_PATH}/chnroute_cnisp.txt ${CURR_PATH}/chnroute_apnic.txt ${CURR_PATH}/chnroute_17mon.txt ${CURR_PATH}/chnroute_ipip.txt ${CURR_PATH}/chnroute_maxmind.txt | grep -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | iprange >${CURR_PATH}/chnroute_tmp.txt
 
 	# 2. compare
 	local md5sum1=$(md5sum ${CURR_PATH}/chnroute_tmp.txt 2>/dev/null | awk '{print $1}')
 	local md5sum2=$(md5sum ${CURR_PATH}/chnroute.txt 2>/dev/null | awk '{print $1}')
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 	if [ "$md5sum1"x = "$md5sum2"x ]; then
 		local _IP_COUNT=$(awk -F "/" '{if ($2 == "") $2 = 32;sum += 2^(32-$2)};END {print sum}' ${CURR_PATH}/chnroute.txt)
 		echo "chnroute same md5! total $_IP_COUNT ips!"
@@ -396,13 +442,13 @@ get_chnlist(){
 	fi
 	
 	# 2.merge
-	cat chnlist.conf apple.china.conf google.china.conf | sed '/^#/d' | sed "s/server=\/\.//g" | sed "s/server=\///g" | sed -r "s/\/\S{1,30}//g" | sed -r "s/\/\S{1,30}//g" >chnlist_download.txt
-	cat chnlist_koolcenter.txt chnlist_download.txt | sort -u >chnlist_tmp.txt
+	cat chnlist.conf apple.china.conf google.china.conf | sed '/^#/d' | sed "s/server=\/\.//g" | sed "s/server=\///g" | sed -r "s/\/\S{1,30}//g" | sed -r "s/\/\S{1,30}//g" >${CURR_PATH}/chnlist_download.txt
+	cat chnlist_download.txt chnlist_koolcenter.txt | sort -u | sed '/^$/d'>chnlist_tmp.txt
 
 	# 3. compare
 	local md5sum1=$(md5sum ${CURR_PATH}/chnlist_tmp.txt 2>/dev/null | sed 's/ /\n/g' | sed -n 1p)
 	local md5sum2=$(md5sum ${CURR_PATH}/chnlist.txt 2>/dev/null | sed 's/ /\n/g' | sed -n 1p)
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 	if [ "$md5sum1"x = "$md5sum2"x ]; then
 		echo "chnlist list same md5!"
 		return
@@ -434,7 +480,7 @@ get_apple(){
 	# 2. compare
 	local md5sum1=$(md5sum ${CURR_PATH}/apple_download.txt | sed 's/ /\n/g' | sed -n 1p)
 	local md5sum2=$(md5sum ${CURR_PATH}/apple_china.txt 2>/dev/null | sed 's/ /\n/g' | sed -n 1p)
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 	if [ "$md5sum1"x = "$md5sum2"x ]; then
 		echo "apple china list same md5!"
 		return
@@ -455,12 +501,12 @@ get_apple(){
 
 get_google(){
 	# 1. get domain
-	cat google.china.conf | sed '/^#/d' | sed "s/server=\/\.//g" | sed "s/server=\///g" | sed -r "s/\/\S{1,30}//g" | sed -r "s/\/\S{1,30}//g" | sort -u >${CURR_PATH}/google_download.txt
+	cat google.china.conf | sed '/^#/d' | sed "s/server=\/\.//g" | sed "s/server=\///g" | sed -r "s/\/\S{1,30}//g" | sed -r "s/\/\S{1,30}//g" | sed '/^$/d' | sort -u >${CURR_PATH}/google_download.txt
 
 	# 2. compare
 	local md5sum1=$(md5sum ${CURR_PATH}/google_download.txt | sed 's/ /\n/g' | sed -n 1p)
 	local md5sum2=$(md5sum ${CURR_PATH}/google_china.txt 2>/dev/null | sed 's/ /\n/g' | sed -n 1p)
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 	if [ "$md5sum1"x = "$md5sum2"x ]; then
 		echo "google china list same md5!"
 		return
@@ -486,7 +532,7 @@ get_cdn_test(){
 	# 2. compare
 	local md5sum1=$(md5sum ${CURR_PATH}/cdn_test_tmp.txt 2>/dev/null | sed 's/ /\n/g' | sed -n 1p)
 	local md5sum2=$(md5sum ${CURR_PATH}/cdn_test.txt 2>/dev/null | sed 's/ /\n/g' | sed -n 1p)
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 	if [ "$md5sum1"x = "$md5sum2"x ]; then
 		echo "cdn test list same md5!"
 		return
@@ -528,7 +574,7 @@ finish(){
 	rm -f ${CURR_PATH}/google.china.conf
 	rm -f ${CURR_PATH}/google_download.txt
 	rm -f ${CURR_PATH}/cdn_test_tmp.txt
-	echo "---------------------------------"
+	echo "------------------------------------------------------------------"
 }
 
 clear_chnroute(){
